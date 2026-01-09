@@ -41,6 +41,10 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+/*
+ * CAUDALÍMETRE: (5V vermell)  (CN9 D2 groc)  (GND negre)   no cal dividor de tensió dons el PA10 es FT
+ * NTC:  3.3V--->NTC--->CN8 A0(ADC)--->47k--->GND (adc mesura el potencial respecte a gnd, el cual es VRf)
+ */
 
 /* USER CODE END PM */
 
@@ -57,7 +61,7 @@ volatile float RT=0.00f;
 volatile float VT=0.00f;
 volatile float A=0.05181f;
 volatile uint32_t B=4090;
-volatile uint16_t Rf=4700;       /*  ULL!!! la reistenciaa fixa ha de ser similar a rntc 25ºC, es a dir, de uns 4700 ohms. */
+volatile uint16_t Rf=4700;
 
 /* USER CODE END PV */
 
@@ -123,7 +127,7 @@ int main(void)
 		    Vo = HAL_ADC_GetValue(&hadc1);
 		    HAL_ADC_Stop(&hadc1);
 																			/* obtenim el valor del voltatge analogic entre 0 i 4095*/
-			VT = 3.3f * (Vo) / 4095.0f;                        /* obtenim el voltatje entre 0 i 3,3V */    /* conectat CN8 A0--> PA0 */
+			VT = 3.3f * (Vo) / 4095.0f;                        /* obtenim el voltatje entre 0 i 3,3V */
 			/* VT=(Rf*3.3)/(Rf+NTC) */
 			RT=(Rf*(3.3-VT))/VT;
 		 /**
@@ -131,7 +135,6 @@ int main(void)
 		  *R25=47000
 		  *B=4090
 		  *R25/(e^(B/T))=A==0.05181
-		  *utilitzo 3.3-->ntc-->adc-->Rf-->gnd el adc mesura el potencial respecte a gnd, el cual es VRf
 		  */
 			TempC = B/(logf(RT/A))-273.15;
 

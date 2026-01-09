@@ -18,15 +18,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
-#include <stdio.h>
-#include <string.h>
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,6 +50,15 @@
 volatile uint32_t pulsos = 0;
 volatile uint8_t calcular = 0;
 volatile float caudal_Lmin=0.00f;
+
+volatile float TempC=0.00f;
+volatile float Vo=0.00f;
+volatile float RT=0.00f;
+volatile float VT=0.00f;
+volatile float A=0.05181f;
+volatile uint32_t B=4090;
+volatile uint16_t Rf=4700;       /*  ULL!!! la reistenciaa fixa ha de ser similar a rntc 25ºC, es a dir, de uns 4700 ohms. */
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,6 +104,7 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_Init();
   MX_USART2_UART_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
@@ -108,6 +118,24 @@ int main(void)
 		calcular=0;
 		caudal_Lmin = (pulsos/4.8);
 		pulsos=0;
+		HAL_ADC_Start(&hadc1);
+		if (HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY) == HAL_OK) {
+		    Vo = HAL_ADC_GetValue(&hadc1);
+		    HAL_ADC_Stop(&hadc1);
+																			/* obtenim el valor del voltatge analogic entre 0 i 4095*/
+			VT = 3.3f * (Vo) / 4095.0f;                        /* obtenim el voltatje entre 0 i 3,3V */    /* conectat CN8 A0--> PA0 */
+			/* VT=(Rf*3.3)/(Rf+NTC) */
+			RT=(Rf*(3.3-VT))/VT;
+		 /**
+		  *
+		  *R25=47000
+		  *B=4090
+		  *R25/(e^(B/T))=A==0.05181
+		  *utilitzo 3.3-->ntc-->adc-->Rf-->gnd el adc mesura el potencial respecte a gnd, el cual es VRf
+		  */
+			TempC = B/(logf(RT/A))-273.15;
+
+		}
 	}
     /* USER CODE END WHILE */
 
